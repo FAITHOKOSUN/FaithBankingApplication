@@ -2,14 +2,27 @@ package com.FaithBank.FaithBank.controller;
 
 import com.FaithBank.FaithBank.dto.*;
 import com.FaithBank.FaithBank.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
+@Tag(name = "User Account Management Api")
 public class UserController {
     @Autowired
     UserService userService;
+    @Operation(
+            summary = "Create New User Account",
+            description = "Account Creation with User Id"
+
+    )
+    @ApiResponse(
+            responseCode = "201",
+            description = "http Status 201 CREATED"
+    )
 
    @PostMapping
     public BankResponse createAccount(@RequestBody UserRequest userRequest)
@@ -17,6 +30,15 @@ public class UserController {
       return  userService.createAccount(userRequest);
 
     }
+    @Operation(
+            summary = "Balance Enquiry on User Account",
+            description = "Balance Enquiry"
+
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "http Status 200 CREATED"
+    )
     @GetMapping("balanceEnquiry")
     public  BankResponse balEnquiry(@RequestBody EnquiryRequest request)
     {
