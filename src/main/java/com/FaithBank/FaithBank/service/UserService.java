@@ -1,9 +1,6 @@
 package com.FaithBank.FaithBank.service;
 
-import com.FaithBank.FaithBank.dto.BankResponse;
-import com.FaithBank.FaithBank.dto.CreditDebitRequest;
-import com.FaithBank.FaithBank.dto.EnquiryRequest;
-import com.FaithBank.FaithBank.dto.UserRequest;
+import com.FaithBank.FaithBank.dto.*;
 
 public interface UserService {
     BankResponse createAccount (UserRequest userRequest);
@@ -13,4 +10,6 @@ public interface UserService {
 
     public BankResponse creditAccount(CreditDebitRequest request);
     public BankResponse debitAccount(CreditDebitRequest request);
+
+    public BankResponse TransferRequest(TransferRequest request);
 }

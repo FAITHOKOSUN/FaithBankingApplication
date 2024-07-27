@@ -13,8 +13,8 @@ import java.math.BigDecimal;
 public class UserServiceImplementation implements UserService {
     @Autowired
     UserRepository userRepository;
-//    @Autowired
-//    EmailService emailService ;
+    @Autowired
+    EmailService emailService;
 
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
@@ -45,14 +45,15 @@ public class UserServiceImplementation implements UserService {
 
                 .build();
         User saveuser = userRepository.save(newuser);
-//        //send email alert
-//        EmailDetails emailDetails = EmailDetails.builder()
-//                .recipient(saveuser.getEmail())
-//                .subject("WELCOME TO FAITH BANK-NEW ACCOUNT DETAILS")
-//                .messageBody("Dear Sarah, \nCongratulations, your account has been successfully created!\nYour Account details: \n "+ "Account Name:"+ saveuser.getFirstName()+ " " + saveuser.getOtherName() + " " + saveuser.getLastName() +"\nAccount Number:"+ saveuser.getAccountNumber())
-//
-//                .build();
-//        emailService.sendEmailAlert(emailDetails);
+        //send email alert
+
+        EmailDetails emailDetails = EmailDetails.builder()
+                .recipient(saveuser.getEmail())
+                .subject("WELCOME TO FAITH BANK-NEW ACCOUNT DETAILS")
+                .messageBody("Dear Sarah, \nCongratulations, your account has been successfully created!\nYour Account details: \n " + "Account Name:" + saveuser.getFirstName() + " " + saveuser.getOtherName() + " " + saveuser.getLastName() + "\nAccount Number:" + saveuser.getAccountNumber())
+
+                .build();
+        emailService.sendEmailAlert(emailDetails);
         return BankResponse.builder()
                 .responseCode(AccountUtils.ACCOUNT_CREATION_SUCCESS)
                 .responseMessage(AccountUtils.ACCOUNT_CREATION_MESSAGE)
@@ -147,10 +148,26 @@ public class UserServiceImplementation implements UserService {
         // Retrieve user account information
         User userDebit = userRepository.findByAccountNumber(request.getAccountNumber());
         // Check if the account balance is less than the amount to be withdrawn
-       if (userDebit.getAccountBalance().compareTo(request.getAmount()) < 0)
+        if (userDebit.getAccountBalance().compareTo(request.getAmount()) < 0)
 
-              return BankResponse.builder()
-                .responseMessage(AccountUtils.INSUFFICIENT_BALANCE)
+            return BankResponse.builder()
+                    .responseMessage(AccountUtils.INSUFFICIENT_BALANCE)
+                    .responseCode(AccountUtils.ACCOUNT_DEBIT_CODE)
+                    .accountInfo(AccountInfo.builder()
+                            .AccountName(userDebit.getFirstName() + " " + userDebit.getOtherName() + " " + userDebit.getLastName())
+                            .AccountBalance(userDebit.getAccountBalance())
+                            .AccountNumber(request.getAccountNumber())
+                            .build())
+                    .build();
+        // Deduct the amount from the account balance
+        userDebit.setAccountBalance(userDebit.getAccountBalance().subtract(request.getAmount()));
+
+        // Save the updated account information
+        userRepository.save(userDebit);
+
+        // Return the response for successful debit
+        return BankResponse.builder()
+                .responseMessage(AccountUtils.ACCOUNT_DEBIT_MESSAGE)
                 .responseCode(AccountUtils.ACCOUNT_DEBIT_CODE)
                 .accountInfo(AccountInfo.builder()
                         .AccountName(userDebit.getFirstName() + " " + userDebit.getOtherName() + " " + userDebit.getLastName())
@@ -158,22 +175,75 @@ public class UserServiceImplementation implements UserService {
                         .AccountNumber(request.getAccountNumber())
                         .build())
                 .build();
-       // Deduct the amount from the account balance
-    userDebit.setAccountBalance(userDebit.getAccountBalance().subtract(request.getAmount()));
+    }
 
-    // Save the updated account information
-    userRepository.save(userDebit);
+    @Override
+    public BankResponse TransferRequest(TransferRequest request) {
+        //Acc to debit(if it exist)
+        //check if the source acc(to debit) is not more than the current bal
+        //debit acc
+        //get acc to credit
+        //credit acc
 
-    // Return the response for successful debit
-    return BankResponse.builder()
-            .responseMessage(AccountUtils.ACCOUNT_DEBIT_MESSAGE)
-            .responseCode(AccountUtils.ACCOUNT_DEBIT_CODE)
-            .accountInfo(AccountInfo.builder()
-                    .AccountName(userDebit.getFirstName() + " " + userDebit.getOtherName() + " " + userDebit.getLastName())
-                    .AccountBalance(userDebit.getAccountBalance())
-                    .AccountNumber(request.getAccountNumber())
-                    .build())
-            .build();
-}
 
+        // Check if the destination account exists
+        boolean destinationacctExist = userRepository.existsByAccountNumber(request.getDestinationAccount());
+        if (!destinationacctExist) {
+            return BankResponse.builder()
+                    .responseMessage(AccountUtils.ACCOUNT_NOT_EXIST_MESSAGE)
+                    .responseCode(AccountUtils.ACCOUNT_NOT_EXIST_CODE)
+                    .accountInfo(null)
+                    .build();
+        }
+
+        // Check if the source account exists and has sufficient balance
+        User sourceacctuser = userRepository.findByAccountNumber(request.getSourceAccount());
+        if (sourceacctuser == null) {
+            return BankResponse.builder()
+                    .responseMessage(AccountUtils.ACCOUNT_NOT_EXIST_MESSAGE)
+                    .responseCode(AccountUtils.ACCOUNT_NOT_EXIST_CODE)
+                    .accountInfo(null)
+                    .build();
+        }
+        if (request.getAmount().compareTo(sourceacctuser.getAccountBalance()) > 0) {
+            return BankResponse.builder()
+                    .responseMessage(AccountUtils.INSUFFICIENT_BALANCE)
+                    .responseCode(AccountUtils.ACCOUNT_DEBIT_CODE)
+                    .accountInfo(null)
+                    .build();
+        }
+
+        // Debit the source account
+        sourceacctuser.setAccountBalance(sourceacctuser.getAccountBalance().subtract(request.getAmount()));
+        userRepository.save(sourceacctuser);
+
+        // Send debit alert
+        EmailDetails debitAlert = EmailDetails.builder()
+                .subject("Debit Alert!")
+                .recipient(sourceacctuser.getEmail())
+                .messageBody(request.getAmount() + "has been deducted from your account.Current balance is " + sourceacctuser.getAccountBalance())
+                .build();
+        emailService.sendEmailAlert(debitAlert);
+
+        // Credit the destination account
+
+        User destinationAcct = userRepository.findByAccountNumber(request.getDestinationAccount());
+        destinationAcct.setAccountBalance(destinationAcct.getAccountBalance().add(request.getAmount()));
+        userRepository.save(destinationAcct);
+
+        // Send credit alert
+        EmailDetails creditAlert = EmailDetails.builder()
+                .subject("Credit Alert!")
+                .recipient(destinationAcct.getEmail())
+                .messageBody(request.getAmount() + " has been credited to your account from " + sourceacctuser.getFirstName() + " " + sourceacctuser.getLastName() + ". Current balance: " + destinationAcct.getAccountBalance())
+                .build();
+        emailService.sendEmailAlert(creditAlert);
+
+        return BankResponse.builder()
+                .responseCode("009")
+                .responseMessage("Transfer successful")
+                .accountInfo(null)
+                .build();
+
+    }
 }
