@@ -16,6 +16,9 @@ public class UserServiceImplementation implements UserService {
     @Autowired
     EmailService emailService;
 
+    @Autowired
+    transactionService transactionService;
+
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
         //create acc- service a new user into the database
@@ -121,6 +124,17 @@ public class UserServiceImplementation implements UserService {
         User userCredit = userRepository.findByAccountNumber(request.getAccountNumber());
         userCredit.setAccountBalance(userCredit.getAccountBalance().add(request.getAmount()));
         userRepository.save(userCredit);
+
+        //Save transaction
+
+        Transactiondto transactiondto = Transactiondto.builder()
+                .accountNumber(userCredit.getAccountNumber())
+                .transactionType("CREDIT")
+                .amount(request.getAmount())
+                .build();
+
+        transactionService.saveTransaction(transactiondto);
+
         return BankResponse.builder()
                 .responseMessage(AccountUtils.ACCOUNT_CREDIT_MESSAGE)
                 .responseCode(AccountUtils.ACCOUNT_CREDIT_CODE)
@@ -165,6 +179,14 @@ public class UserServiceImplementation implements UserService {
         // Save the updated account information
         userRepository.save(userDebit);
 
+
+        Transactiondto transactiondto = Transactiondto.builder()
+                .accountNumber(userDebit.getAccountNumber())
+                .transactionType("Debit")
+                .amount(request.getAmount())
+                .build();
+
+        transactionService.saveTransaction(transactiondto);
         // Return the response for successful debit
         return BankResponse.builder()
                 .responseMessage(AccountUtils.ACCOUNT_DEBIT_MESSAGE)
@@ -225,6 +247,7 @@ public class UserServiceImplementation implements UserService {
                 .build();
         emailService.sendEmailAlert(debitAlert);
 
+
         // Credit the destination account
 
         User destinationAcct = userRepository.findByAccountNumber(request.getDestinationAccount());
@@ -239,6 +262,14 @@ public class UserServiceImplementation implements UserService {
                 .build();
         emailService.sendEmailAlert(creditAlert);
 
+
+        Transactiondto transactiondto = Transactiondto.builder()
+                .accountNumber(destinationAcct.getAccountNumber())
+                .transactionType("Credit")
+                .amount(request.getAmount())
+                .build();
+
+        transactionService.saveTransaction(transactiondto);
         return BankResponse.builder()
                 .responseCode("009")
                 .responseMessage("Transfer successful")
