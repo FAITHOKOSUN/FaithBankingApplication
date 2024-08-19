@@ -14,10 +14,11 @@ public class AccountUtils {
     public static final String ACCOUNT_CREDIT_CODE = "005";
     public static final String ACCOUNT_DEBIT_MESSAGE = "Hello,Your account has been successfully debited";
     public static final String ACCOUNT_DEBIT_CODE = "006";
-    public static  final String ACCOUNT_NOT_EXIST_CODE = "003";
+    public static  final String ACCOUNT_NOT_EXIST_CODE = "008";
     public static final String ACCOUNT_NOT_EXIST_MESSAGE = "Account number does not exist ";
 
     public static final String INSUFFICIENT_BALANCE= "Insufficient funds";
+    public static final String ACCOUNT_CREATION_FAILED = "ACCOUNT_CREATION_FAILED";
 public static String generateAccNumb()
 {
     //    2024 + random six digits to get 10 digits acc number
@@ -36,6 +37,15 @@ public static String generateAccNumb()
 //
 //
 //    return accountNumber.append(year).append(randomNumber).tostring();
+
+    /*
+    to secure the app
+    1. Add necessary dependencies (spring and jwt dependencies)
+    2. Add password field to user entity (encrypt the password)
+    3. Create four Classes, 3 handles jwt issues and 1 for security configuration
+    4. Add a bean of userDetailsService to handle fetching username
+
+     */
 }
 
 }

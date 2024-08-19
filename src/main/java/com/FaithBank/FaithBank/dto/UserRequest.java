@@ -1,5 +1,7 @@
 package com.FaithBank.FaithBank.dto;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +24,7 @@ public class UserRequest {
     private  String address;
     private  String stateOfOrigin;
     private  String email;
+    private  String password;
     private  String phoneNumber;
     private  String alternativePhoneNumber;
 

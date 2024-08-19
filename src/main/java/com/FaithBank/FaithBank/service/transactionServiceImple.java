@@ -16,7 +16,10 @@ public class transactionServiceImple implements transactionService{
     Transaction transaction = Transaction.builder()
             .transactionType(transactiondto.getTransactionType())
             .transactionId(transactiondto.getAccountNumber())
-            .status("SUCCESS")
+            .accountNumber(transactiondto.getAccountNumber())
+            .amount(transactiondto.getAmount())
+            .status(transactiondto.getStatus() != null ? transactiondto.getStatus() : "SUCCESS")
+
             .build();
     transactionRepo.save(transaction);
         System.out.println("Transaction generated successfully");

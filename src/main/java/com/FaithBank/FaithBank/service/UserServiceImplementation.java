@@ -4,7 +4,9 @@ import com.FaithBank.FaithBank.Entity.User;
 import com.FaithBank.FaithBank.dto.*;
 import com.FaithBank.FaithBank.repository.UserRepository;
 import com.FaithBank.FaithBank.utils.AccountUtils;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,6 +20,8 @@ public class UserServiceImplementation implements UserService {
 
     @Autowired
     transactionService transactionService;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
@@ -32,6 +36,13 @@ public class UserServiceImplementation implements UserService {
 
 
         }
+        if (userRequest.getPassword() == null) {
+            return BankResponse.builder()
+                    .responseCode(AccountUtils.ACCOUNT_CREATION_FAILED)
+                    .responseMessage("Password cannot be null")
+                    .accountInfo(null)
+                    .build();
+        }
         User newuser = User.builder()
                 .firstName(userRequest.getFirstName())
                 .lastName(userRequest.getLastName())
@@ -42,6 +53,7 @@ public class UserServiceImplementation implements UserService {
                 .accountNumber(AccountUtils.generateAccNumb())
                 .accountBalance(BigDecimal.ZERO)
                 .email(userRequest.getEmail())
+                .password(passwordEncoder.encode(userRequest.getPassword()))
                 .phoneNumber(userRequest.getPhoneNumber())
                 .alternativePhoneNumber(userRequest.getAlternativePhoneNumber())
                 .status("Active")
@@ -53,7 +65,7 @@ public class UserServiceImplementation implements UserService {
         EmailDetails emailDetails = EmailDetails.builder()
                 .recipient(saveuser.getEmail())
                 .subject("WELCOME TO FAITH BANK-NEW ACCOUNT DETAILS")
-                .messageBody("Dear Sarah, \nCongratulations, your account has been successfully created!\nYour Account details: \n " + "Account Name:" + saveuser.getFirstName() + " " + saveuser.getOtherName() + " " + saveuser.getLastName() + "\nAccount Number:" + saveuser.getAccountNumber())
+                .messageBody("Dear," + userRequest.getFirstName() + "\nCongratulations, your account has been successfully created!\nYour Account details: \n " + "Account Name:" + saveuser.getFirstName() + " " + saveuser.getOtherName() + " " + saveuser.getLastName() + "\nAccount Number:" + saveuser.getAccountNumber())
 
                 .build();
         emailService.sendEmailAlert(emailDetails);
@@ -276,5 +288,12 @@ public class UserServiceImplementation implements UserService {
                 .accountInfo(null)
                 .build();
 
+
+
     }
+//    public static void main(String[] args)
+////    {
+//        UserServiceImplementation userServiceImplementation = new UserServiceImplementation();
+//        System.out.println(userServiceImplementation.passwordEncoder.encode("1234"));
+//    }
 }
