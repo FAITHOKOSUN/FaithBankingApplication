@@ -38,14 +38,7 @@ public static String generateAccNumb()
 //
 //    return accountNumber.append(year).append(randomNumber).tostring();
 
-    /*
-    to secure the app
-    1. Add necessary dependencies (spring and jwt dependencies)
-    2. Add password field to user entity (encrypt the password)
-    3. Create four Classes, 3 handles jwt issues and 1 for security configuration
-    4. Add a bean of userDetailsService to handle fetching username
 
-     */
 }
 
 }
