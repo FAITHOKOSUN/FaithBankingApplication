@@ -25,7 +25,7 @@ public class JwtTokenProvider {
     @Value("${app.jwt-expiration}")
     private long jwtExpirationDate;
 
-    private String generateToken(Authentication authentication) {
+    public String generateToken(Authentication authentication) {
         String username = authentication.getName();
         Date currentDate = new Date();
         Date expirationDate = new Date(currentDate.getTime() + jwtExpirationDate);
@@ -33,19 +33,24 @@ public class JwtTokenProvider {
                 .setSubject(username)
                 .setIssuedAt(currentDate)
                 .setExpiration(expirationDate)
-                .signWith(key())
+                .signWith(getSigningKey())
                 .compact();
     }
-      private Key key(){
-          byte[] bytes = Decoders.BASE64.decode(jwtSecret);
-          return Keys.hmacShaKeyFor(bytes);
+//      private Key key(){
+//          byte[] bytes = Decoders.BASE64.decode(jwtSecret);
+//          return Keys.hmacShaKeyFor(bytes);
+//
+//
+//        }
+private Key getSigningKey() {
+    byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+    return Keys.hmacShaKeyFor(keyBytes);
+}
 
-
-        }
-        public String getUsername(String token){
+    public String getUsername(String token){
 
            Claims claims = Jwts.parser()
-                    .setSigningKey(key())
+                    .setSigningKey(getSigningKey())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
@@ -57,7 +62,7 @@ public class JwtTokenProvider {
     {
         try{
             Jwts.parser()
-                    .setSigningKey(key())
+                    .setSigningKey(getSigningKey())
                     .build()
                     .parse(token);
             return true;

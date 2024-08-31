@@ -1,11 +1,16 @@
 package com.FaithBank.FaithBank.service;
 
+import com.FaithBank.FaithBank.Entity.Role;
 import com.FaithBank.FaithBank.Entity.User;
+import com.FaithBank.FaithBank.config.JwtTokenProvider;
 import com.FaithBank.FaithBank.dto.*;
 import com.FaithBank.FaithBank.repository.UserRepository;
 import com.FaithBank.FaithBank.utils.AccountUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +27,11 @@ public class UserServiceImplementation implements UserService {
     transactionService transactionService;
     @Autowired
     PasswordEncoder passwordEncoder;
-
-    @Override
+    @Autowired
+    AuthenticationManager authenticationManager;
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
+        @Override
     public BankResponse createAccount(UserRequest userRequest) {
         //create acc- service a new user into the database
         //check if a user exist
@@ -57,6 +65,7 @@ public class UserServiceImplementation implements UserService {
                 .phoneNumber(userRequest.getPhoneNumber())
                 .alternativePhoneNumber(userRequest.getAlternativePhoneNumber())
                 .status("Active")
+                .role(Role.valueOf("ROLE_Admin"))
 
                 .build();
         User saveuser = userRepository.save(newuser);
@@ -81,6 +90,29 @@ public class UserServiceImplementation implements UserService {
 
                         .build())
                 .build();
+
+
+    }
+    //login
+
+    public BankResponse login(LoginDto loginDto)
+    {
+        Authentication authentication = null;
+        authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword()));
+
+                EmailDetails loginAlert = EmailDetails.builder()
+                        .subject("youre logged in!")
+                        .recipient(loginDto.getEmail())
+                        .messageBody("Yore logged in")
+                        .build();
+
+                emailService.sendEmailAlert(loginAlert);
+                return BankResponse.builder()
+                        .responseCode("Login Successful")
+                        .responseMessage(jwtTokenProvider.generateToken(authentication))
+                        .build();
+
 
 
     }
@@ -216,8 +248,8 @@ public class UserServiceImplementation implements UserService {
         //Acc to debit(if it exist)
         //check if the source acc(to debit) is not more than the current bal
         //debit acc
-        //get acc to credit
-        //credit acc
+        //get acc to Credit
+        //Credit acc
 
 
         // Check if the destination account exists
